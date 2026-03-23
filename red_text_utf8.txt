@@ -1,0 +1,16 @@
+﻿--- public/templates/NBI ENDORSEMENT.docx ---
+RED: [January 16,2026HON. JOLLY R. RESUELLOMunicipal MayorPoblacion Basista, Pangasinan]
+RED: [Jericho Y. Barcelon  ]
+RED: [January 19,2026]
+RED: [ June 4,2026.]
+--- public/templates/MOA NBI.docx ---
+RED: [MR. ERIC M. AUSTRIAOfficer Head IIIMR. ERIC M. AUSTRIAOfficer Head III]
+RED: [Mr. Eric M. Austria]
+RED: [Officer Head III]
+RED: [Commission on Election Urbiztondo]
+RED: [Commission on Election Urbiztondo ]
+RED: [The Commission on Election Urbiztondo ]
+RED: [12th day of January, 2026 ]
+RED: [COMMISSION ON ELECTION URBIZTONDO]
+RED: [MR. ERIC M. AUSTRIA]
+--- public/templates/PARENT consent.docx ---
