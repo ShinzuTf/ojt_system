@@ -40,32 +40,76 @@ class UserController extends Controller
 
     public function store(Request $request)
     {
-        Log::info('User creation attempt', ['data' => $request->all()]);
+        $adminId = auth()->id();
+        $role = $request->input('role');
+        
+        Log::info('Account creation initiated', [
+            'admin_id' => $adminId,
+            'role' => $role,
+            'email' => $request->input('email'),
+            'ip_address' => $request->ip(),
+        ]);
         
         // Check if trying to create an admin
-        if ($request->input('role') === 'admin') {
+        if ($role === 'admin') {
+            Log::warning('Attempt to create admin account blocked', [
+                'admin_id' => $adminId,
+                'requested_email' => $request->input('email'),
+            ]);
             return back()->with('error', 'Cannot create additional admin accounts. System allows only 1 admin.');
         }
 
+        // === VALIDATION RULES ===
         $rules = [
-            'fname' => 'required|string|max:100',
-            'lname' => 'required|string|max:100',
-            'email' => 'required|email|unique:users',
+            'fname' => 'required|string|max:100|regex:/^[a-zA-Z\s\-\']+$/',
+            'lname' => 'required|string|max:100|regex:/^[a-zA-Z\s\-\']+$/',
+            'email' => 'required|email|email:rfc|unique:users,email',
             'role' => 'required|in:student,coordinator',
-            'password' => 'required|min:8|confirmed',
+            'password' => 'required|min:8|confirmed|regex:/[a-z]/|regex:/[A-Z]/|regex:/[0-9]/',
         ];
 
-        if ($request->input('role') === 'student') {
+        if ($role === 'student') {
             $rules['course'] = 'required|in:BSIT,BSCS';
-        } elseif ($request->input('role') === 'coordinator') {
-            $rules['company_email'] = 'required|exists:ojt_info,company_email';
+            Log::debug('Student account validation rules applied', ['admin_id' => $adminId]);
+        } elseif ($role === 'coordinator') {
+            $rules['company_email'] = 'required|email|exists:ojt_info,company_email';
+            Log::debug('Coordinator account validation rules applied', ['admin_id' => $adminId]);
         }
 
+        // === VALIDATE INPUT ===
         try {
-            $request->validate($rules);
+            $validated = $request->validate($rules);
+            Log::info('Input validation passed', [
+                'admin_id' => $adminId,
+                'role' => $role,
+                'email' => $validated['email'],
+            ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::error('Validation failed', ['errors' => $e->errors()]);
+            Log::warning('Input validation failed', [
+                'admin_id' => $adminId,
+                'role' => $role,
+                'email' => $request->input('email'),
+                'errors' => $e->errors(),
+            ]);
             throw $e;
+        }
+
+        // === COORDINATOR-SPECIFIC VALIDATION ===
+        if ($role === 'coordinator') {
+            $coordinatorValidation = $this->validateCoordinatorData($request, $adminId);
+            if (!$coordinatorValidation['valid']) {
+                Log::warning('Coordinator validation failed', [
+                    'admin_id' => $adminId,
+                    'reason' => $coordinatorValidation['message'],
+                    'company_email' => $request->input('company_email'),
+                ]);
+                return back()->withErrors(['coordinator' => $coordinatorValidation['message']]);
+            }
+            Log::info('Coordinator-specific validation passed', [
+                'admin_id' => $adminId,
+                'company_email' => $request->input('company_email'),
+                'company_name' => $coordinatorValidation['company_name'],
+            ]);
         }
 
         // Store original password before hashing (for email sending)
@@ -73,74 +117,208 @@ class UserController extends Controller
         $username = $request->email;
 
         $userData = [
-            'fname' => $request->fname,
-            'lname' => $request->lname,
-            'email' => $request->email,
-            'role' => $request->role,
+            'fname' => trim($request->fname),
+            'lname' => trim($request->lname),
+            'email' => strtolower($request->email),
+            'role' => $role,
             'password' => bcrypt($request->password),
         ];
 
         // If coordinator, get company info from OjtInfo and set must_change_password
-        if ($request->role === 'coordinator') {
+        if ($role === 'coordinator') {
             $company = OjtInfo::where('company_email', $request->company_email)
                 ->first();
             if ($company) {
                 $userData['company_name'] = $company->company_name;
                 $userData['company_email'] = $company->company_email;
+                Log::debug('Company data retrieved', [
+                    'admin_id' => $adminId,
+                    'company_id' => $company->id,
+                    'company_name' => $company->company_name,
+                ]);
             }
             $userData['must_change_password'] = true;
         }
 
+        // === CREATE USER ===
         try {
             $user = User::create($userData);
-            Log::info('User created successfully', ['user_id' => $user->id, 'email' => $user->email]);
+            
+            Log::info('Account created successfully', [
+                'admin_id' => $adminId,
+                'user_id' => $user->id,
+                'role' => $user->role,
+                'email' => $user->email,
+                'timestamp' => now(),
+            ]);
         } catch (\Exception $e) {
-            Log::error('User creation failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            Log::error('Account creation failed', [
+                'admin_id' => $adminId,
+                'role' => $role,
+                'email' => $request->input('email'),
+                'error_message' => $e->getMessage(),
+                'error_code' => $e->getCode(),
+                'trace' => $e->getTraceAsString(),
+            ]);
             throw $e;
         }
 
-        // Send welcome email to coordinator with credentials (async, non-blocking)
-        if ($request->role === 'coordinator') {
+        // === SEND WELCOME EMAIL FOR COORDINATOR ===
+        if ($role === 'coordinator') {
             $coordinatorName = $request->fname . ' ' . $request->lname;
             try {
+                Log::debug('Sending coordinator welcome email', [
+                    'admin_id' => $adminId,
+                    'user_id' => $user->id,
+                    'email' => $user->email,
+                ]);
+                
                 CoordinatorMailService::sendWelcomeEmail(
                     $request->email,
                     $username,
                     $originalPassword,
                     $coordinatorName
                 );
+                
+                Log::info('Coordinator welcome email sent successfully', [
+                    'admin_id' => $adminId,
+                    'user_id' => $user->id,
+                    'recipient_email' => $request->email,
+                ]);
             } catch (\Exception $e) {
-                Log::error('Coordinator welcome email failed: ' . $e->getMessage());
+                Log::error('Coordinator welcome email failed', [
+                    'admin_id' => $adminId,
+                    'user_id' => $user->id,
+                    'recipient_email' => $request->email,
+                    'error_message' => $e->getMessage(),
+                ]);
                 // Continue anyway - don't block account creation
             }
             return back()->with('success', 'Coordinator account created successfully!');
         }
 
-        return back()->with('success', ucfirst($request->role) . ' account created successfully.');
+        return back()->with('success', ucfirst($role) . ' account created successfully.');
+    }
+
+    /**
+     * Validate coordinator-specific data
+     *
+     * @param Request $request
+     * @param int $adminId
+     * @return array
+     */
+    private function validateCoordinatorData(Request $request, $adminId): array
+    {
+        // Check if company email exists in ojt_info
+        $company = OjtInfo::where('company_email', $request->company_email)->first();
+        if (!$company) {
+            return [
+                'valid' => false,
+                'message' => 'The selected company email does not exist in the system.',
+            ];
+        }
+
+        // Check if a coordinator already exists for this company
+        $existingCoordinator = User::where('role', 'coordinator')
+            ->where('company_email', $request->company_email)
+            ->first();
+        if ($existingCoordinator) {
+            Log::warning('Duplicate coordinator for company', [
+                'admin_id' => $adminId,
+                'company_email' => $request->company_email,
+                'existing_coordinator_id' => $existingCoordinator->id,
+                'existing_coordinator_email' => $existingCoordinator->email,
+            ]);
+            return [
+                'valid' => false,
+                'message' => 'A coordinator already exists for this company (' . $existingCoordinator->email . '). Please assign a different company or deactivate the existing coordinator first.',
+            ];
+        }
+
+        // Validate company has valid data
+        if (empty($company->company_name)) {
+            return [
+                'valid' => false,
+                'message' => 'Company record is incomplete (missing company name).',
+            ];
+        }
+
+        // Check email format matches standard corporate email patterns
+        if (!filter_var($request->company_email, FILTER_VALIDATE_EMAIL)) {
+            return [
+                'valid' => false,
+                'message' => 'Invalid company email format.',
+            ];
+        }
+
+        Log::debug('Coordinator validation checks passed', [
+            'admin_id' => $adminId,
+            'company_email' => $request->company_email,
+            'company_name' => $company->company_name,
+        ]);
+
+        return [
+            'valid' => true,
+            'company_name' => $company->company_name,
+        ];
     }
 
     public function update(Request $request, $id)
     {
+        $adminId = auth()->id();
         $user = User::findOrFail($id);
         
+        Log::info('Account update initiated', [
+            'admin_id' => $adminId,
+            'user_id' => $user->id,
+            'role' => $user->role,
+            'email' => $user->email,
+        ]);
+        
         $rules = [
-            'fname' => 'required|string|max:100',
-            'lname' => 'required|string|max:100',
-            'email' => ['required', 'email', Rule::unique('users')->ignore($id)],
+            'fname' => 'required|string|max:100|regex:/^[a-zA-Z\s\-\']+$/',
+            'lname' => 'required|string|max:100|regex:/^[a-zA-Z\s\-\']+$/',
+            'email' => ['required', 'email', 'email:rfc', Rule::unique('users')->ignore($id)],
         ];
 
         if ($user->role === 'student') {
             $rules['course'] = 'required|in:BSIT,BSCS';
         } elseif ($user->role === 'coordinator') {
-            $rules['company_email'] = 'required|exists:ojt_info,company_email';
+            $rules['company_email'] = 'required|email|exists:ojt_info,company_email';
         }
 
-        $request->validate($rules);
+        try {
+            $validated = $request->validate($rules);
+            Log::info('Account update validation passed', [
+                'admin_id' => $adminId,
+                'user_id' => $user->id,
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::warning('Account update validation failed', [
+                'admin_id' => $adminId,
+                'user_id' => $user->id,
+                'errors' => $e->errors(),
+            ]);
+            throw $e;
+        }
+
+        // Additional validation for coordinator updates
+        if ($user->role === 'coordinator' && $request->has('company_email')) {
+            $coordinatorValidation = $this->validateCoordinatorUpdate($user->id, $request, $adminId);
+            if (!$coordinatorValidation['valid']) {
+                Log::warning('Coordinator update validation failed', [
+                    'admin_id' => $adminId,
+                    'user_id' => $user->id,
+                    'reason' => $coordinatorValidation['message'],
+                ]);
+                return back()->withErrors(['coordinator' => $coordinatorValidation['message']]);
+            }
+        }
 
         $updateData = [
-            'fname' => $request->fname,
-            'lname' => $request->lname,
-            'email' => $request->email,
+            'fname' => trim($request->fname),
+            'lname' => trim($request->lname),
+            'email' => strtolower($request->email),
         ];
 
         // If coordinator, update company info
@@ -149,24 +327,120 @@ class UserController extends Controller
             if ($company) {
                 $updateData['company_name'] = $company->company_name;
                 $updateData['company_email'] = $company->company_email;
+                Log::debug('Coordinator company info updated', [
+                    'admin_id' => $adminId,
+                    'user_id' => $user->id,
+                    'new_company_email' => $company->company_email,
+                    'new_company_name' => $company->company_name,
+                ]);
             }
         }
 
-        $user->update($updateData);
+        try {
+            $user->update($updateData);
+            Log::info('Account updated successfully', [
+                'admin_id' => $adminId,
+                'user_id' => $user->id,
+                'role' => $user->role,
+                'new_email' => $updateData['email'],
+                'timestamp' => now(),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Account update failed', [
+                'admin_id' => $adminId,
+                'user_id' => $user->id,
+                'error_message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw $e;
+        }
 
         return back()->with('success', 'User account updated successfully.');
     }
 
+    /**
+     * Validate coordinator-specific data during update
+     *
+     * @param int $coordinatorId
+     * @param Request $request
+     * @param int $adminId
+     * @return array
+     */
+    private function validateCoordinatorUpdate($coordinatorId, Request $request, $adminId): array
+    {
+        // Check if company email exists in ojt_info
+        $company = OjtInfo::where('company_email', $request->company_email)->first();
+        if (!$company) {
+            return [
+                'valid' => false,
+                'message' => 'The selected company email does not exist in the system.',
+            ];
+        }
+
+        // Check if another coordinator already has this company assigned (excluding current coordinator)
+        $existingCoordinator = User::where('role', 'coordinator')
+            ->where('company_email', $request->company_email)
+            ->where('id', '!=', $coordinatorId)
+            ->first();
+        if ($existingCoordinator) {
+            Log::warning('Cannot reassign company to different coordinator', [
+                'admin_id' => $adminId,
+                'current_coordinator_id' => $coordinatorId,
+                'existing_coordinator_id' => $existingCoordinator->id,
+                'company_email' => $request->company_email,
+            ]);
+            return [
+                'valid' => false,
+                'message' => 'This company is already assigned to another coordinator (' . $existingCoordinator->email . ').',
+            ];
+        }
+
+        return [
+            'valid' => true,
+            'company_name' => $company->company_name,
+        ];
+    }
+
     public function destroy($id)
     {
+        $adminId = auth()->id();
         $user = User::findOrFail($id);
+        
+        Log::info('Account deactivation initiated', [
+            'admin_id' => $adminId,
+            'user_id' => $user->id,
+            'role' => $user->role,
+            'email' => $user->email,
+        ]);
         
         // Prevent deleting if only admin
         if ($user->role === 'admin' && User::where('role', 'admin')->count() === 1) {
+            Log::warning('Attempt to deactivate only admin account blocked', [
+                'admin_id' => $adminId,
+                'target_user_id' => $user->id,
+            ]);
             return back()->with('error', 'Cannot deactivate the only admin account.');
         }
 
-        $user->delete();
+        try {
+            $user->delete();
+            Log::info('Account deactivated successfully', [
+                'admin_id' => $adminId,
+                'user_id' => $user->id,
+                'role' => $user->role,
+                'email' => $user->email,
+                'timestamp' => now(),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Account deactivation failed', [
+                'admin_id' => $adminId,
+                'user_id' => $user->id,
+                'error_message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw $e;
+        }
+
         return back()->with('success', 'User account deactivated.');
     }
 }
