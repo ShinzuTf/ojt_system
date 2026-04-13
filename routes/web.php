@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\DashboardController as AdminDashboard;
 use App\Http\Controllers\Admin\StudentController as AdminStudent;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\DocumentGeneratorController;
 use App\Http\Controllers\TestDocumentController;
@@ -146,6 +147,15 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::post('/users', [UserController::class, 'store'])->name('users.store');
     Route::put('/users/{id}', [UserController::class, 'update'])->name('users.update');
     Route::delete('/users/{id}', [UserController::class, 'destroy'])->name('users.destroy');
+
+    // Activity Logs & Reporting
+    Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs');
+    Route::get('/activity-logs/{id}', [ActivityLogController::class, 'show'])->name('activity-logs.show');
+    Route::get('/reports/logins', [ActivityLogController::class, 'loginReport'])->name('reports.logins');
+    Route::get('/reports/documents', [ActivityLogController::class, 'documentReport'])->name('reports.documents');
+    Route::get('/reports/evaluations', [ActivityLogController::class, 'evaluationReport'])->name('reports.evaluations');
+    Route::get('/reports/user-management', [ActivityLogController::class, 'userManagementReport'])->name('reports.user-management');
+    Route::get('/activity-logs/export', [ActivityLogController::class, 'export'])->name('activity-logs.export');
 
     // Profile Settings
     Route::get('/change-password', [ProfileController::class, 'showChangePasswordForm'])->name('profile.change-password');

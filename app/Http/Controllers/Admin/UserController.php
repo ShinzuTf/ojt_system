@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\OjtInfo;
 use App\Services\CoordinatorMailService;
+use App\Services\ActivityLogService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Log;
@@ -194,8 +195,24 @@ class UserController extends Controller
                 ]);
                 // Continue anyway - don't block account creation
             }
+            
+            // Log activity: Coordinator created
+            ActivityLogService::logCoordinatorCreation(
+                $user->id,
+                $user->email,
+                $user->company_name,
+                ['course' => $user->course ?? null]
+            );
+            
             return back()->with('success', 'Coordinator account created successfully!');
         }
+
+        // Log activity: Student created
+        ActivityLogService::logStudentCreation(
+            $user->id,
+            $user->email,
+            $request->course
+        );
 
         return back()->with('success', ucfirst($role) . ' account created successfully.');
     }
@@ -345,6 +362,21 @@ class UserController extends Controller
                 'new_email' => $updateData['email'],
                 'timestamp' => now(),
             ]);
+            
+            // Log activity based on user role
+            if ($user->role === 'coordinator') {
+                ActivityLogService::logCoordinatorUpdate(
+                    $user->id,
+                    $updateData['email'],
+                    $updateData
+                );
+            } elseif ($user->role === 'student') {
+                ActivityLogService::logStudentUpdate(
+                    $user->id,
+                    $updateData['email'],
+                    $updateData
+                );
+            }
         } catch (\Exception $e) {
             Log::error('Account update failed', [
                 'admin_id' => $adminId,
@@ -423,6 +455,15 @@ class UserController extends Controller
         }
 
         try {
+            // Store user data before deletion for activity logging
+            $userRole = $user->role;
+            $userEmail = $user->email;
+            $companyName = $user->company_name ?? null;
+            $course = null;
+            if ($user->role === 'student' && $user->ojtInfo) {
+                $course = $user->ojtInfo->course ?? null;
+            }
+            
             $user->delete();
             Log::info('Account deactivated successfully', [
                 'admin_id' => $adminId,
@@ -431,6 +472,21 @@ class UserController extends Controller
                 'email' => $user->email,
                 'timestamp' => now(),
             ]);
+            
+            // Log activity based on user role
+            if ($userRole === 'coordinator') {
+                ActivityLogService::logCoordinatorDeactivation(
+                    $id,
+                    $userEmail,
+                    $companyName
+                );
+            } elseif ($userRole === 'student') {
+                ActivityLogService::logStudentDeactivation(
+                    $id,
+                    $userEmail,
+                    $course
+                );
+            }
         } catch (\Exception $e) {
             Log::error('Account deactivation failed', [
                 'admin_id' => $adminId,
