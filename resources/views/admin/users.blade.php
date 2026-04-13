@@ -165,9 +165,6 @@
                     <label class="form-label">Account Type <span class="required">*</span></label>
                     <div style="display:flex; gap:12px;">
                         <label class="form-check" style="padding:10px 16px; border:1px solid var(--gray-200); border-radius:8px; flex:1; cursor:pointer;">
-                            <input type="radio" name="role" value="student" checked onchange="toggleCourseField()"> <span>Student</span>
-                        </label>
-                        <label class="form-check" style="padding:10px 16px; border:1px solid var(--gray-200); border-radius:8px; flex:1; cursor:pointer;">
                             <input type="radio" name="role" value="coordinator" onchange="toggleCourseField()"> <span>Coordinator</span>
                         </label>
                     </div>

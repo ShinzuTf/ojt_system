@@ -62,7 +62,7 @@
 
             {{-- Email --}}
             <div class="form-group" style="margin-bottom: 14px;">
-                <label class="form-label" for="reg-email">Email Address <span class="required">*</span></label>
+                <label class="form-label" for="reg-email">Gmail Address <span class="required">*</span></label>
                 <input type="email" id="reg-email" name="email" class="form-input {{ $errors->has('email') ? 'input-error' : '' }}" placeholder="Enter your email address" value="{{ old('email') }}" required autocomplete="email">
                 @error('email') <span class="form-error">{{ $message }}</span> @enderror
             </div>

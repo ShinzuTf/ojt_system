@@ -8,7 +8,7 @@
         {{-- Logo & Title --}}
         <div class="auth-logo">
             <img src="{{ asset('images/philcst_logo.png') }}" alt="PHILCST Logo">
-            <h1>CCS OJT Template Requirements Generator and Evaluation System</h1>
+            <h1>Template Generator and Performance Evaluation</h1>
         </div>
 
         @if (session('status'))
@@ -22,7 +22,7 @@
             @csrf
 
             <div class="form-group">
-                <label class="form-label" for="login-email">Email Address</label>
+                <label class="form-label" for="login-email">Gmail Address</label>
                 <input
                     type="text"
                     id="login-email"
@@ -53,10 +53,6 @@
             </div>
 
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 8px;">
-                <label class="form-check">
-                    <input type="checkbox" name="remember" {{ old('remember') ? 'checked' : '' }}>
-                    <span>Remember me</span>
-                </label>
                 <a href="{{ route('password.request') }}" style="font-size:0.82rem; color:var(--purple-600); font-weight:600;">Forgot password?</a>
             </div>
 
