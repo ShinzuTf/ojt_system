@@ -439,4 +439,68 @@ class ActivityLogService
             ]
         );
     }
+
+    /**
+     * Log OJT deactivation (end of semester)
+     */
+    public static function logOjtDeactivation(
+        int $studentId,
+        string $email,
+        ?string $companyName = null
+    ): ?ActivityLog {
+        return self::log(
+            activity: 'ojt_account_deactivated',
+            module: 'ojt',
+            action: 'deactivate',
+            description: "OJT account deactivated at end of semester: {$email}" . ($companyName ? " ({$companyName})" : ''),
+            data: [
+                'student_id' => $studentId,
+                'email' => $email,
+                'company_name' => $companyName,
+            ],
+            targetUserId: $studentId
+        );
+    }
+
+    /**
+     * Log OJT reactivation (for next semester re-enrollment)
+     */
+    public static function logOjtReactivation(
+        int $studentId,
+        string $email
+    ): ?ActivityLog {
+        return self::log(
+            activity: 'ojt_account_reactivated',
+            module: 'ojt',
+            action: 'reactivate',
+            description: "OJT account reactivated: {$email}",
+            data: [
+                'student_id' => $studentId,
+                'email' => $email,
+            ],
+            targetUserId: $studentId
+        );
+    }
+
+    /**
+     * Log bulk OJT deactivation (end of semester)
+     */
+    public static function logBulkOjtDeactivation(
+        int $deactivatedCount,
+        int $archivedCount,
+        ?int $errorCount = 0
+    ): ?ActivityLog {
+        return self::log(
+            activity: 'bulk_ojt_deactivation',
+            module: 'ojt',
+            action: 'bulk_deactivate',
+            description: "Bulk OJT deactivation completed: {$deactivatedCount} accounts deactivated, {$archivedCount} records archived" . ($errorCount ? ", {$errorCount} errors" : ''),
+            data: [
+                'deactivated_count' => $deactivatedCount,
+                'archived_count' => $archivedCount,
+                'error_count' => $errorCount,
+            ]
+        );
+    }
 }
+

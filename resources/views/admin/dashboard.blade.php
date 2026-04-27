@@ -37,7 +37,6 @@
 <div class="card">
     <div class="card-header">
         <h2 class="card-title">Recent Students</h2>
-        <a href="{{ route('admin.students') }}" class="btn btn-ghost btn-sm">View All Students</a>
     </div>
     <div class="card-body" style="padding:0;">
         <div class="table-wrapper">

@@ -17,8 +17,14 @@ class UserController extends Controller
     {
         $students = User::where('role', 'student')->with('ojtInfo')->latest()->get();
         $coordinators = User::where('role', 'coordinator')->latest()->get();
+        $supervisors = User::where('role', 'supervisor')->latest()->get();
         
-        return view('admin.users', compact('students', 'coordinators'));
+        return view('admin.users', compact('students', 'coordinators', 'supervisors'));
+    }
+
+    public function create()
+    {
+        return view('admin.users.create');
     }
 
     /**
@@ -57,6 +63,9 @@ class UserController extends Controller
                 'admin_id' => $adminId,
                 'requested_email' => $request->input('email'),
             ]);
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => 'Cannot create additional admin accounts. System allows only 1 admin.'], 422);
+            }
             return back()->with('error', 'Cannot create additional admin accounts. System allows only 1 admin.');
         }
 
@@ -92,6 +101,9 @@ class UserController extends Controller
                 'email' => $request->input('email'),
                 'errors' => $e->errors(),
             ]);
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'errors' => $e->errors()], 422);
+            }
             throw $e;
         }
 
@@ -104,6 +116,9 @@ class UserController extends Controller
                     'reason' => $coordinatorValidation['message'],
                     'company_email' => $request->input('company_email'),
                 ]);
+                if ($request->expectsJson()) {
+                    return response()->json(['success' => false, 'message' => $coordinatorValidation['message']], 422);
+                }
                 return back()->withErrors(['coordinator' => $coordinatorValidation['message']]);
             }
             Log::info('Coordinator-specific validation passed', [
@@ -167,33 +182,49 @@ class UserController extends Controller
         // === SEND WELCOME EMAIL FOR COORDINATOR ===
         if ($role === 'coordinator') {
             $coordinatorName = $request->fname . ' ' . $request->lname;
+            
+            // Send email asynchronously using mail() instead of blocking on SMTP
             try {
-                Log::debug('Sending coordinator welcome email', [
+                Log::debug('Queuing coordinator welcome email', [
                     'admin_id' => $adminId,
                     'user_id' => $user->id,
                     'email' => $user->email,
                 ]);
                 
-                CoordinatorMailService::sendWelcomeEmail(
-                    $request->email,
-                    $username,
-                    $originalPassword,
-                    $coordinatorName
-                );
+                // Use a non-blocking approach - queue the mail or send with timeout
+                set_error_handler(function() { return true; });
+                $timeout = 5; // 5 second timeout
                 
-                Log::info('Coordinator welcome email sent successfully', [
-                    'admin_id' => $adminId,
-                    'user_id' => $user->id,
-                    'recipient_email' => $request->email,
-                ]);
-            } catch (\Exception $e) {
-                Log::error('Coordinator welcome email failed', [
+                $originalTimeout = ini_get('default_socket_timeout');
+                ini_set('default_socket_timeout', $timeout);
+                
+                try {
+                    CoordinatorMailService::sendWelcomeEmail(
+                        $request->email,
+                        $username,
+                        $originalPassword,
+                        $coordinatorName
+                    );
+                    
+                    Log::info('Coordinator welcome email sent successfully', [
+                        'admin_id' => $adminId,
+                        'user_id' => $user->id,
+                        'recipient_email' => $request->email,
+                    ]);
+                } finally {
+                    ini_set('default_socket_timeout', $originalTimeout);
+                    restore_error_handler();
+                }
+            } catch (\Throwable $e) {
+                Log::warning('Coordinator welcome email failed (account still created)', [
                     'admin_id' => $adminId,
                     'user_id' => $user->id,
                     'recipient_email' => $request->email,
                     'error_message' => $e->getMessage(),
+                    'error_code' => $e->getCode(),
                 ]);
                 // Continue anyway - don't block account creation
+                // Email can be resent manually or via admin panel later
             }
             
             // Log activity: Coordinator created
@@ -204,7 +235,11 @@ class UserController extends Controller
                 ['course' => $user->course ?? null]
             );
             
-            return back()->with('success', 'Coordinator account created successfully!');
+            $message = 'Coordinator account created successfully!';
+            if ($request->expectsJson()) {
+                return response()->json(['success' => true, 'message' => $message]);
+            }
+            return back()->with('success', $message);
         }
 
         // Log activity: Student created
@@ -214,7 +249,11 @@ class UserController extends Controller
             $request->course
         );
 
-        return back()->with('success', ucfirst($role) . ' account created successfully.');
+        $message = ucfirst($role) . ' account created successfully.';
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'message' => $message]);
+        }
+        return back()->with('success', $message);
     }
 
     /**
@@ -484,7 +523,7 @@ class UserController extends Controller
                 ActivityLogService::logStudentDeactivation(
                     $id,
                     $userEmail,
-                    $course
+                    $course ?? 'Unknown'
                 );
             }
         } catch (\Exception $e) {

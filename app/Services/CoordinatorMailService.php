@@ -5,11 +5,12 @@ namespace App\Services;
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\View;
 
 class CoordinatorMailService
 {
     /**
-     * Send welcome email to newly created coordinator account using PHPMailer
+     * Send welcome email using PHPMailer with detailed error logging
      * 
      * @param string $coordinatorEmail
      * @param string $username
@@ -22,63 +23,81 @@ class CoordinatorMailService
         try {
             $mail = new PHPMailer(true);
 
+            Log::info('Starting email send', [
+                'recipient' => $coordinatorEmail,
+                'mailer_config' => [
+                    'host' => config('mail.mailers.smtp.host'),
+                    'port' => config('mail.mailers.smtp.port'),
+                    'scheme' => config('mail.mailers.smtp.scheme'),
+                ]
+            ]);
+
             // Server settings
             $mail->isSMTP();
-            $mail->Host = config('mail.host', env('MAIL_HOST'));
+            $mail->SMTPDebug = 2;  // Enable verbose debugging
+            $mail->Host = config('mail.mailers.smtp.host');
             $mail->SMTPAuth = true;
-            $mail->Username = config('mail.username', env('MAIL_USERNAME'));
-            $mail->Password = config('mail.password', env('MAIL_PASSWORD'));
+            $mail->Username = config('mail.mailers.smtp.username');
+            $mail->Password = config('mail.mailers.smtp.password');
+            // Use TLS encryption for Gmail
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-            $mail->Port = config('mail.port', env('MAIL_PORT', 587));
+            $mail->Port = config('mail.mailers.smtp.port');
 
-            // Recipients
-            $mail->setFrom(config('mail.from.address', env('MAIL_FROM_ADDRESS')), config('mail.from.name', env('MAIL_FROM_NAME', 'OJT System')));
+            // Set timeout
+            $mail->Timeout = 30;
+            $mail->SMTPKeepAlive = true;
+
+            // Sender and recipient
+            $mail->setFrom(config('mail.from.address'), config('mail.from.name'));
             $mail->addAddress($coordinatorEmail, $coordinatorName);
 
-            // Content
-            $mail->isHTML(true);
+            // Email subject
             $mail->Subject = 'Your OJT System Coordinator Account Has Been Created';
-            
-            // Encode images to base64
-            $schoolLogoPath = public_path('images/schoollogo.png');
-            $philcstLogoPath = public_path('images/philcst_logo.png');
-            
-            $schoolLogoBase64 = '';
-            $philcstLogoBase64 = '';
-            
-            if (file_exists($schoolLogoPath)) {
-                $schoolLogoBase64 = base64_encode(file_get_contents($schoolLogoPath));
-            }
-            if (file_exists($philcstLogoPath)) {
-                $philcstLogoBase64 = base64_encode(file_get_contents($philcstLogoPath));
-            }
-            
-            // Get the rendered email template with base64 encoded images
-            $emailBody = view('emails.coordinator-welcome', [
+
+            // Get email body from template
+            $emailBody = View::make('emails.coordinator-welcome', [
                 'coordinatorName' => $coordinatorName,
                 'username' => $username,
                 'password' => $password,
                 'loginUrl' => config('app.url') . '/login',
-                'schoolLogoBase64' => $schoolLogoBase64,
-                'philcstLogoBase64' => $philcstLogoBase64,
+                
             ])->render();
-            
+
+            $mail->isHTML(true);
             $mail->Body = $emailBody;
             $mail->AltBody = self::getPlainTextTemplate($coordinatorName, $username, $password);
 
-            return $mail->send();
-            
+            // Send the email
+            $result = $mail->send();
+
+            Log::info('Coordinator welcome email sent successfully', [
+                'email' => $coordinatorEmail,
+                'name' => $coordinatorName,
+                'timestamp' => now(),
+            ]);
+
+            return true;
+
         } catch (Exception $e) {
-            Log::error('Coordinator email sending failed: PHPMailer Error - ' . $e->getMessage());
+            Log::error('Coordinator email sending failed - PHPMailer Exception', [
+                'email' => $coordinatorEmail,
+                'error_message' => $e->getMessage(),
+                'error_code' => $e->getCode(),
+            ]);
             return false;
         } catch (\Exception $e) {
-            Log::error('Coordinator email sending failed: ' . $e->getMessage());
+            Log::error('Coordinator email sending failed - General Exception', [
+                'email' => $coordinatorEmail,
+                'error_message' => $e->getMessage(),
+                'error_code' => $e->getCode(),
+                'trace' => $e->getTraceAsString(),
+            ]);
             return false;
         }
     }
 
     /**
-     * Get plain text email template for alt body
+     * Get plain text email template
      */
     private static function getPlainTextTemplate($coordinatorName, $username, $password)
     {
@@ -100,13 +119,11 @@ Important Security Notice:
 - Please change your password immediately after your first login
 - Keep these credentials secure and never share them with anyone
 - Do not reply to this email with sensitive information
-- If you did not request this account, contact the system administrator immediately
 
-If you experience any issues logging in or need assistance, please contact the system administrator.
-
-This is an automated message. Please do not reply directly to this email.
-© 2025 PHILCST CCS OJT System. All rights reserved.
+Best regards,
+PHILCST CCS OJT System
 TEXT;
     }
 }
+
 

@@ -15,6 +15,9 @@ class ActivityLogController extends Controller
     public function index(Request $request)
     {
         $query = ActivityLog::with('user', 'targetUser')
+            ->whereHas('user', function ($q) {
+                $q->whereIn('role', ['student', 'coordinator', 'supervisor']);
+            })
             ->orderBy('created_at', 'desc');
 
         // Filter by activity type

@@ -19,6 +19,10 @@
             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a2 2 0 002 2h14a2 2 0 002-2v-3"/></svg>
             Export
         </button>
+        <button class="btn btn-danger" onclick="openModal('endSemesterModal')" title="Deactivate all active OJT accounts at end of semester">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+            End OJT Semester
+        </button>
         <button class="btn btn-primary" onclick="openModal('addStudentModal')">
             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 6v12m6-6H6"/></svg>
             Add Student
@@ -312,10 +316,103 @@
         </div>
     </div>
 </div>
+
+{{-- ================================================== --}}
+{{-- End OJT Semester - Deactivation Modal --}}
+{{-- ================================================== --}}
+<div class="modal-overlay" id="endSemesterModal">
+    <div class="modal" style="max-width:560px;">
+        <div class="modal-header">
+            <h3 class="modal-title">End OJT Semester</h3>
+            <button class="modal-close" onclick="closeModal('endSemesterModal')">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <form method="POST" action="{{ route('admin.students.deactivate-all-ojt') }}">
+            @csrf
+            <div class="modal-body">
+                <div class="alert" style="background:var(--danger-light,#fee2e2); border-left:3px solid var(--danger,#ef4444); margin-bottom:18px; padding:12px 16px; border-radius:8px; font-size:0.83rem;">
+                    <strong>⚠ Warning:</strong> This action will:
+                    <ul style="margin:8px 0 0 0; padding-left:20px;">
+                        <li>Deactivate <strong>all active student OJT accounts</strong></li>
+                        <li>Archive their current OJT records</li>
+                        <li>Students will <strong>NOT be able to log in</strong> until reactivated</li>
+                    </ul>
+                </div>
+
+                <div id="deactivationSummary" style="background:var(--gray-50); padding:16px; border-radius:8px; margin-bottom:18px; display:none;">
+                    <h4 style="margin:0 0 12px 0; font-size:0.9rem; font-weight:600; color:var(--gray-700);">Impact Summary</h4>
+                    <div class="form-grid">
+                        <div>
+                            <div style="font-size:2rem; font-weight:700; color:var(--primary);" id="summaryCount">0</div>
+                            <div style="font-size:0.8rem; color:var(--gray-600);">Students to Deactivate</div>
+                        </div>
+                        <div>
+                            <div style="font-size:2rem; font-weight:700; color:var(--warning);" id="summaryWithOjt">0</div>
+                            <div style="font-size:0.8rem; color:var(--gray-600);">OJT Records to Archive</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Add Notes (Optional)</label>
+                    <textarea name="notes" class="form-input" placeholder="e.g., End of 2nd semester 2024, re-enrollment expected next semester..." rows="3"></textarea>
+                </div>
+
+                <div class="form-check" style="margin-bottom:16px;">
+                    <input type="checkbox" id="confirmCheckbox" class="form-check-input">
+                    <label for="confirmCheckbox" class="form-check-label">
+                        I understand this action will deactivate all active OJT student accounts and cannot be immediately undone.
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('endSemesterModal')">Cancel</button>
+                <button type="submit" class="btn btn-danger" id="confirmDeactivateBtn" disabled>
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    Deactivate All OJT Accounts
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
 <script>
+// ── Modal Deactivation Summary ────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('endSemesterModal');
+    const confirmCheckbox = document.getElementById('confirmCheckbox');
+    const confirmDeactivateBtn = document.getElementById('confirmDeactivateBtn');
+    const summaryDiv = document.getElementById('deactivationSummary');
+
+    // Show modal trigger
+    const originalOpenModal = window.openModal || function() {};
+    window.openModal = function(modalId) {
+        if (modalId === 'endSemesterModal') {
+            // Load summary
+            fetch('{{ route("admin.students.deactivation-summary") }}')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('summaryCount').textContent = data.students_to_deactivate;
+                    document.getElementById('summaryWithOjt').textContent = data.students_with_ojt_info;
+                    summaryDiv.style.display = 'block';
+                })
+                .catch(error => console.error('Error loading summary:', error));
+        }
+        const overlayEl = document.getElementById(modalId);
+        if (overlayEl) {
+            overlayEl.style.display = 'flex';
+        }
+    };
+
+    // Enable submit button only if checkbox is checked
+    confirmCheckbox.addEventListener('change', function() {
+        confirmDeactivateBtn.disabled = !this.checked;
+    });
+});
+
 // ── View Modal ──────────────────────────────────────────
 function openViewModal(id, name, studentNo, course, year, company, companyEmail, address, supervisor, ojtStart, ojtEnd, email) {
     document.getElementById('vm-name').textContent         = name;

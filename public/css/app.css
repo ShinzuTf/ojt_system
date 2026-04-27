@@ -119,6 +119,8 @@ ol {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
+    position: relative;
+    z-index: 1;
     transition: margin-left 0.3s ease;
 }
 
@@ -140,7 +142,7 @@ ol {
     color: #fff;
     display: flex;
     flex-direction: column;
-    z-index: 1000;
+    z-index: 2000;
     transition: width 0.3s ease;
     overflow-x: hidden;
 }
@@ -761,8 +763,8 @@ table.data-table tbody tr:last-child td {
     color: var(--info);
 }
 
-/* Pagination */
-.pagination {
+/* Pagination (custom summary bar only) */
+div.pagination {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -771,12 +773,12 @@ table.data-table tbody tr:last-child td {
     color: var(--gray-500);
 }
 
-.pagination-pages {
+div.pagination .pagination-pages {
     display: flex;
     gap: 4px;
 }
 
-.pagination-btn {
+div.pagination .pagination-btn {
     padding: 6px 12px;
     border-radius: 6px;
     background: none;
@@ -786,11 +788,11 @@ table.data-table tbody tr:last-child td {
     transition: all 0.15s;
 }
 
-.pagination-btn:hover {
+div.pagination .pagination-btn:hover {
     background: var(--gray-100);
 }
 
-.pagination-btn.active {
+div.pagination .pagination-btn.active {
     background: var(--purple-600);
     color: #fff;
 }
@@ -1567,12 +1569,313 @@ textarea.form-input {
     transition: width 0.4s ease;
 }
 
+/* ============================================================
+   BOOTSTRAP INTEGRATION & OVERRIDES
+   ============================================================ */
+
+/* Card Styling */
+.card {
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.card-header {
+    border-bottom: 1px solid var(--gray-200);
+    padding: 16px 20px;
+}
+
+.card-header.bg-light {
+    background-color: var(--gray-50) !important;
+}
+
+.card-body {
+    padding: 20px;
+}
+
+/* Badge Styling - Bootstrap Integration */
+.badge {
+    padding: 6px 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 6px;
+}
+
+.badge.bg-success {
+    background-color: var(--success) !important;
+    color: white;
+}
+
+.badge.bg-danger {
+    background-color: var(--danger) !important;
+    color: white;
+}
+
+.badge.bg-warning {
+    background-color: var(--warning) !important;
+    color: white;
+}
+
+.badge.bg-info {
+    background-color: var(--info) !important;
+    color: white;
+}
+
+.badge.bg-secondary {
+    background-color: #6c757d !important;
+    color: white;
+}
+
+/* Button Styling */
+.btn {
+    border-radius: 6px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.btn-primary {
+    background-color: var(--purple-600);
+    border-color: var(--purple-600);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: var(--purple-700);
+    border-color: var(--purple-700);
+}
+
+.btn-outline-primary {
+    color: var(--purple-600);
+    border-color: var(--purple-600);
+    background-color: transparent;
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--purple-50);
+    color: var(--purple-700);
+    border-color: var(--purple-700);
+}
+
+/* Alert Styling */
+.alert {
+    border: none;
+    border-radius: var(--border-radius-lg);
+    padding: 14px 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.alert-success {
+    background-color: var(--success-light);
+    color: var(--success);
+}
+
+.alert-danger {
+    background-color: var(--danger-light);
+    color: var(--danger);
+}
+
+.alert-warning {
+    background-color: var(--warning-light);
+    color: var(--warning);
+}
+
+.alert-info {
+    background-color: var(--info-light);
+    color: var(--info);
+}
+
+/* Form Elements */
+.form-control,
+.form-select {
+    border: 1px solid var(--gray-300);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 0.95rem;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--purple-500);
+    box-shadow: 0 0 0 0.2rem rgba(124, 58, 237, 0.25);
+}
+
+/* Progress Bar */
+.progress {
+    height: 25px;
+    background-color: var(--gray-100);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    background-color: var(--success) !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .card {
+        margin-bottom: 16px;
+    }
+    
+    .btn-sm {
+        padding: 8px 12px;
+        font-size: 0.85rem;
+    }
+}
+
 .progress-fill.green {
     background: var(--success);
 }
 
 .progress-fill.amber {
     background: var(--warning);
+}
+
+/* Stat Card Styling */
+.stat-card {
+    background: white;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius-lg);
+    padding: 18px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    border-color: var(--gray-300);
+}
+
+.stat-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 10px;
+    font-size: 1.8rem;
+    flex-shrink: 0;
+}
+
+.stat-icon.purple {
+    background: var(--purple-100);
+    color: var(--purple-600);
+}
+
+.stat-icon.green {
+    background: rgba(5, 150, 105, 0.1);
+    color: var(--success);
+}
+
+.stat-icon.amber {
+    background: rgba(217, 119, 6, 0.1);
+    color: var(--warning);
+}
+
+.stat-icon.blue {
+    background: rgba(37, 99, 235, 0.1);
+    color: var(--info);
+}
+
+.stat-icon.red {
+    background: rgba(220, 38, 38, 0.1);
+    color: var(--danger);
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    color: var(--gray-600);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--gray-900);
+    line-height: 1;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--gray-900);
+    line-height: 1;
+}
+
+/* Timesheet Enhancements */
+.table-responsive {
+    border-radius: var(--border-radius-lg);
+    overflow: hidden;
+}
+
+.table {
+    margin-bottom: 0;
+}
+
+.table thead th {
+    background-color: #f8f9fa;
+    border-color: var(--gray-200);
+    font-weight: 600;
+    color: var(--gray-700);
+    vertical-align: middle;
+}
+
+.table tbody td {
+    border-color: var(--gray-200);
+    vertical-align: middle;
+    color: var(--gray-800);
+}
+
+.table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+code {
+    background-color: var(--gray-100);
+    color: var(--gray-800);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+}
+
+/* Disabled Form Controls */
+.form-control:disabled,
+.form-select:disabled {
+    background-color: var(--gray-100);
+    border-color: var(--gray-300);
+    color: var(--gray-600);
+    cursor: not-allowed;
+    opacity: 0.7;
 }
 
 .progress-fill.red {
@@ -1683,7 +1986,7 @@ textarea.form-input {
     .sidebar {
         transform: translateX(-100%);
         width: var(--sidebar-width);
-        z-index: 1100;
+        z-index: 3000;
     }
 
     .sidebar.open {
@@ -1764,7 +2067,7 @@ textarea.form-input {
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.4);
-    z-index: 1050;
+    z-index: 1900;
 }
 
 .sidebar-overlay.show {

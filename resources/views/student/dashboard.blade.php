@@ -71,9 +71,9 @@
 
                             <p style="font-size:0.85rem; color:var(--gray-600); margin:0 0 12px 0;">Pre-filled with your student information from your OJT profile.</p>
 
-                            <button type="button" onclick="generateAndPreview(event, '{{ $template['name'] }}')" class="btn btn-primary btn-sm" style="width:100%; justify-content:center; font-size:0.85rem; color:black; background:var(--primary); margin-top:auto; border:none; cursor:pointer;">
-                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin-right:6px; color:black; display:inline-block;"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                Generate & Review
+                            <button type="button" onclick="generateAndDownload(event, '{{ $template['name'] }}')" class="btn btn-primary btn-sm" style="width:100%; justify-content:center; font-size:0.85rem; color:black; background:var(--primary); margin-top:auto; border:none; cursor:pointer;">
+                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin-right:6px; color:black; display:inline-block;"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4-4m0 0L8 8m4-4v12"/></svg>
+                                Generate and Download
                             </button>
                         </div>
                     @endforeach
@@ -162,7 +162,7 @@
             <button type="button" onclick="closePreviewModal()" class="btn btn-secondary" style="border:1px solid var(--gray-300); background:white; color:var(--gray-700); padding:10px 20px; border-radius:6px; cursor:pointer;">
                 Cancel
             </button>
-            <a id="downloadLink" href="#" download class="btn btn-primary" style="background:var(--primary); color:blackNN; padding:10px 24px; border-radius:6px; text-decoration:none; display:inline-block; cursor:pointer; border:none;">
+            <a id="downloadLink" href="#" download class="btn btn-primary" style="background:var(--primary); color:black; padding:10px 24px; border-radius:6px; text-decoration:none; display:inline-block; cursor:pointer; border:none;">
                 <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin-right:6px; vertical-align:middle; display:inline-block;"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4-4m0 0L8 8m4-4v12"/></svg>
                 Download Document
             </a>
@@ -179,9 +179,8 @@
 </style>
 
 @push('scripts')
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.min.js"></script>
 <script>
-function generateAndPreview(event, templateName) {
+function generateAndDownload(event, templateName) {
     event.preventDefault();
     
     const btn = event.target;
@@ -193,47 +192,23 @@ function generateAndPreview(event, templateName) {
     })
     .then(response => response.blob())
     .then(blob => {
+        // Create download link and trigger download immediately
         const url = window.URL.createObjectURL(blob);
-        document.getElementById('downloadLink').href = url;
-        document.getElementById('downloadLink').download = templateName.replace(/\s+/g, '_') + '.docx';
-        
-        // Show modal instantly with loading spinner
-        const modal = document.getElementById('previewModal');
-        const placeholder = document.getElementById('previewPlaceholder');
-        const previewDoc = document.getElementById('previewDocument');
-        
-        modal.style.display = 'flex';
-        placeholder.style.display = 'block';
-        previewDoc.style.display = 'none';
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = templateName.replace(/\s+/g, '_') + '.docx';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
         
         btn.disabled = false;
-        btn.innerHTML = '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin-right:6px; display:inline-block;"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg> Generate & Review';
-        
-        // Start rendering preview in background
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const arrayBuffer = e.target.result;
-            if (typeof mammoth !== 'undefined') {
-                mammoth.convertToHtml({arrayBuffer: arrayBuffer})
-                    .then(result => {
-                        placeholder.style.display = 'none';
-                        previewDoc.style.display = 'block';
-                        previewDoc.innerHTML = result.value;
-                    })
-                    .catch(err => {
-                        placeholder.innerHTML = '<p style="color:var(--gray-600); text-align:center;">Preview not available. You can still download the document below.</p>';
-                        placeholder.style.display = 'block';
-                        previewDoc.style.display = 'none';
-                    });
-            }
-        };
-        reader.readAsArrayBuffer(blob);
+        btn.innerHTML = '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin-right:6px; color:black; display:inline-block;"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4-4m0 0L8 8m4-4v12"/></svg> Generate and Download';
     })
     .catch(error => {
-        document.getElementById('previewPlaceholder').innerHTML = '<p style="color:red; text-align:center;">Error: ' + error.message + '</p>';
-        document.getElementById('previewModal').style.display = 'flex';
+        alert('Error generating document: ' + error.message);
         btn.disabled = false;
-        btn.innerHTML = '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin-right:6px; display:inline-block;"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg> Generate & Review';
+        btn.innerHTML = '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin-right:6px; color:black; display:inline-block;"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4-4m0 0L8 8m4-4v12"/></svg> Generate and Download';
     });
 }
 

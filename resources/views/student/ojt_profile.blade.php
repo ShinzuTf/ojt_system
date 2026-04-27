@@ -155,4 +155,148 @@
         </button>
     </div>
 </form>
+
+{{-- Document Generation Section --}}
+<hr style="margin: 40px 0;">
+
+<div class="card" style="margin-bottom:22px;">
+    <div class="card-header">
+        <h2 class="card-title">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:var(--primary);"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            Generate MOA, Endorsement & Completion Letter
+        </h2>
+        <p style="margin: 8px 0 0 0; font-size: 0.9rem; color: #666;">Select the documents you want to generate. They will be pre-filled with your OJT information.</p>
+    </div>
+    <div class="card-body">
+        @if (!$isComplete)
+            <div class="alert alert-warning" style="margin-bottom: 24px;">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <strong>Incomplete OJT Profile!</strong>
+                <br>Please complete your OJT profile above first. You need to fill in Student Number, Course, and Company Name to generate documents.
+            </div>
+        @endif
+
+        <form method="POST" action="{{ route('student.documents.generate.submit') }}">
+            @csrf
+
+            {{-- Document Selection --}}
+            <div class="mb-4">
+                <label class="form-label"><strong>Select Documents to Generate</strong></label>
+                <p class="text-muted mb-3">Check the documents you want to generate:</p>
+
+                <div class="row">
+                    {{-- MOA --}}
+                    <div class="col-md-6 mb-3">
+                        <div class="card border">
+                            <div class="card-body">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="templates[]" 
+                                           value="Training Agreement (MOA)" id="moa" {{ old('templates') && in_array('Training Agreement (MOA)', old('templates', [])) ? 'checked' : '' }} {{ !$isComplete ? 'disabled' : '' }}>
+                                    <label class="form-check-label" for="moa">
+                                        <strong>Memorandum of Agreement (MOA)</strong>
+                                        <br>
+                                        <small class="text-muted">Legal agreement between College, Student, and Company</small>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Endorsement Letter --}}
+                    <div class="col-md-6 mb-3">
+                        <div class="card border">
+                            <div class="card-body">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="templates[]" 
+                                           value="Endorsement Letter" id="endorsement" {{ old('templates') && in_array('Endorsement Letter', old('templates', [])) ? 'checked' : '' }} {{ !$isComplete ? 'disabled' : '' }}>
+                                    <label class="form-check-label" for="endorsement">
+                                        <strong>Endorsement Letter</strong>
+                                        <br>
+                                        <small class="text-muted">NBI Endorsement Letter from Dean to Host Company</small>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Communication Letter (Single) --}}
+                    <div class="col-md-6 mb-3">
+                        <div class="card border">
+                            <div class="card-body">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="templates[]" 
+                                           value="Communication Letter (Single)" id="comm_single" {{ old('templates') && in_array('Communication Letter (Single)', old('templates', [])) ? 'checked' : '' }} {{ !$isComplete ? 'disabled' : '' }}>
+                                    <label class="form-check-label" for="comm_single">
+                                        <strong>Completion Letter (Single)</strong>
+                                        <br>
+                                        <small class="text-muted">Completion Letter for Your OJT</small>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Communication Letter (Group) --}}
+                    <div class="col-md-6 mb-3">
+                        <div class="card border">
+                            <div class="card-body">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="templates[]" 
+                                           value="Communication Letter (Group)" id="comm_group" {{ old('templates') && in_array('Communication Letter (Group)', old('templates', [])) ? 'checked' : '' }} {{ !$isComplete ? 'disabled' : '' }}>
+                                    <label class="form-check-label" for="comm_group">
+                                        <strong>Completion Letter (Group)</strong>
+                                        <br>
+                                        <small class="text-muted">Completion Letter for Multiple Students</small>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @error('templates')
+                    <span class="text-danger small">{{ $message }}</span>
+                @enderror
+            </div>
+
+            {{-- Generate Button --}}
+            <div style="display:flex; justify-content:flex-end; gap:12px;">
+                <button type="submit" class="btn btn-primary" {{ !$isComplete ? 'disabled' : '' }}>
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14m-7-7h14"/></svg>
+                    Generate Selected Documents
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 @endsection
+
+<style>
+    .card.border {
+        border: 1px solid #dee2e6 !important;
+    }
+    
+    .form-check {
+        padding-left: 0;
+    }
+    
+    .form-check-input {
+        margin-top: 4px;
+        margin-right: 10px;
+    }
+    
+    .form-check-input:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    .form-check-label {
+        cursor: pointer;
+        margin-bottom: 0;
+    }
+    
+    .form-check-input:disabled ~ .form-check-label {
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+</style>

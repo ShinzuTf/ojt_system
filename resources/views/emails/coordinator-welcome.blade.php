@@ -21,26 +21,7 @@
             overflow: hidden;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
-        .logo-header {
-            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-            padding: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .logos {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-        }
-        .logo {
-            height: 60px;
-            width: auto;
-        }
-        .school-logo {
-            height: 70px;
-            width: auto;
-        }
+
         .header {
             background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
             color: white;
@@ -148,14 +129,6 @@
 </head>
 <body>
     <div class="container">
-        {{-- Logo Header --}}
-        <div class="logo-header">
-            <div class="logos">
-                <img src="data:image/png;base64,{{ $schoolLogoBase64 }}" alt="School Logo" class="school-logo">
-                <img src="data:image/png;base64,{{ $philcstLogoBase64 }}" alt="PHILCST Logo" class="logo">
-            </div>
-        </div>
-
         {{-- Main Header --}}
         <div class="header">
             <h1>Welcome to OJT System</h1>

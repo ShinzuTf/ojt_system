@@ -6,6 +6,10 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'OJT System') — PHILCST CCS</title>
     <meta name="description" content="PHILCST CCS On-the-Job Training Document Submission, Monitoring, and Record Management System">
+    <!-- Bootstrap 5.3 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
     <link rel="icon" href="{{ asset('images/philcst_logo.png') }}" type="image/png">
 </head>
@@ -82,11 +86,33 @@
             window.openModal = function(id) {
                 document.getElementById(id).classList.add('show');
                 document.body.style.overflow = 'hidden';
+                
+                // Initialize add user form when opening
+                if (id === 'addUserModal') {
+                    if (typeof initializeAddUserForm === 'function') {
+                        initializeAddUserForm();
+                    }
+                }
             };
 
             window.closeModal = function(id) {
                 document.getElementById(id).classList.remove('show');
                 document.body.style.overflow = '';
+                
+                // Reset add user form when closing
+                if (id === 'addUserModal') {
+                    const form = document.getElementById('addUserForm');
+                    const submitBtn = document.getElementById('submitBtn');
+                    const cancelBtn = document.getElementById('cancelBtn');
+                    const loadingIndicator = document.getElementById('loadingIndicator');
+                    const errorAlert = document.getElementById('formErrorAlert');
+                    
+                    if (form) form.reset();
+                    if (submitBtn) submitBtn.style.display = '';
+                    if (cancelBtn) cancelBtn.disabled = false;
+                    if (loadingIndicator) loadingIndicator.style.display = 'none';
+                    if (errorAlert) errorAlert.style.display = 'none';
+                }
             };
 
             // Tab functions
@@ -129,6 +155,8 @@
             });
         });
     </script>
+    <!-- Bootstrap 5.3 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     @stack('scripts')
 </body>
 </html>

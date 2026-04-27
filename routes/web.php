@@ -33,6 +33,8 @@ Route::get('/', function () {
             case 'admin':
                 return redirect()->route('admin.dashboard');
             case 'coordinator':
+                return redirect()->route('coordinator.dashboard');
+            case 'supervisor':
                 return redirect()->route('supervisor.dashboard');
             default: // student
                 return redirect()->route('student.dashboard');
@@ -63,10 +65,10 @@ Route::get('/reset-password/{token}', [ResetPasswordController::class, 'showRese
 Route::post('/reset-password', [ResetPasswordController::class, 'reset'])->name('password.update');
 
 // ============================================================
-// SUPERVISOR/COORDINATOR ROUTES
+// SUPERVISOR ROUTES
 // ============================================================
-Route::middleware(['auth', 'coordinator'])->prefix('supervisor')->name('supervisor.')->group(function () {
-    Route::get('/dashboard', [\App\Http\Controllers\Supervisor\DashboardController::class, 'index'])->name('dashboard');
+Route::middleware(['auth'])->prefix('supervisor')->name('supervisor.')->group(function () {
+    Route::get('/dashboard', [\App\Http\Controllers\SupervisorDashboardController::class, 'index'])->name('dashboard');
     
     // Evaluations of trainees' daily time records
     Route::get('/trainees', [\App\Http\Controllers\Supervisor\TraineeController::class, 'index'])->name('trainees');
@@ -88,6 +90,13 @@ Route::middleware(['auth', 'coordinator'])->prefix('supervisor')->name('supervis
 });
 
 // ============================================================
+// COORDINATOR ROUTES
+// ============================================================
+Route::middleware(['auth'])->prefix('coordinator')->name('coordinator.')->group(function () {
+    Route::get('/dashboard', [\App\Http\Controllers\CoordinatorDashboardController::class, 'index'])->name('dashboard');
+});
+
+// ============================================================
 // DOCUMENT DOWNLOAD ROUTES
 // ============================================================
 Route::middleware(['auth'])->get('/documents/download', [DocumentGeneratorController::class, 'downloadDocument'])->name('document.download');
@@ -96,7 +105,7 @@ Route::middleware(['auth'])->get('/documents/download', [DocumentGeneratorContro
 // STUDENT ROUTES
 // ============================================================
 Route::middleware(['auth'])->prefix('student')->name('student.')->group(function () {
-    Route::get('/dashboard', [StudentDashboard::class, 'index'])->name('dashboard');
+    Route::get('/dashboard', [\App\Http\Controllers\StudentDashboardController::class, 'index'])->name('dashboard');
 
     // OJT Profile — student fills in their OJT details
     Route::get('/ojt-profile', [OjtProfileController::class, 'index'])->name('ojt-profile');
@@ -116,7 +125,7 @@ Route::middleware(['auth'])->prefix('student')->name('student.')->group(function
     Route::get('/documents/history', [DocumentController::class, 'history'])->name('documents.history');
 
     // View Evaluations (trainee viewing own evaluations)
-    Route::get('/evaluations', [\App\Http\Controllers\Student\EvaluationController::class, 'myEvaluations'])->name('evaluations');
+    Route::get('/evaluations', [\App\Http\Controllers\Student\EvaluationController::class, 'myEvaluations'])->name('evaluations.index');
 
     // Notifications
     Route::get('/notifications', [StudentNotification::class, 'index'])->name('notifications');
@@ -126,7 +135,7 @@ Route::middleware(['auth'])->prefix('student')->name('student.')->group(function
 // ADMIN ROUTES
 // ============================================================
 Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
-    Route::get('/dashboard', [AdminDashboard::class, 'index'])->name('dashboard');
+    Route::get('/dashboard', [\App\Http\Controllers\AdminDashboardController::class, 'index'])->name('dashboard');
 
     // Students
     Route::get('/students', [AdminStudent::class, 'index'])->name('students');
@@ -134,15 +143,23 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::post('/students', [AdminStudent::class, 'store'])->name('students.store');
     Route::put('/students/{id}', [AdminStudent::class, 'update'])->name('students.update');
 
+    // OJT Deactivation & Archive (End of Semester)
+    Route::post('/students/deactivate-all-ojt', [AdminStudent::class, 'deactivateAllOjt'])->name('students.deactivate-all-ojt');
+    Route::post('/students/{id}/reactivate', [AdminStudent::class, 'reactivateStudent'])->name('students.reactivate');
+    Route::get('/students/{id}/past-ojt-records', [AdminStudent::class, 'viewPastOjtRecords'])->name('students.past-ojt-records');
+    Route::get('/students/deactivation/summary', [AdminStudent::class, 'getDeactivationSummary'])->name('students.deactivation-summary');
+
     // Templates (View only - no manual assignment)
     Route::get('/templates', [\App\Http\Controllers\Admin\TemplateController::class, 'index'])->name('templates');
 
     // Reports
     Route::get('/reports', [ReportController::class, 'index'])->name('reports');
     Route::post('/reports/generate', [ReportController::class, 'generate'])->name('reports.generate');
+    Route::get('/ojt-file-records', [\App\Http\Controllers\Admin\OjtFileRecordController::class, 'index'])->name('ojt-file-records');
 
     // User Management (including supervisors/coordinators)
     Route::get('/users', [UserController::class, 'index'])->name('users');
+    Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
     Route::get('/users/available-companies', [UserController::class, 'getAvailableCompanies'])->name('users.available-companies');
     Route::post('/users', [UserController::class, 'store'])->name('users.store');
     Route::put('/users/{id}', [UserController::class, 'update'])->name('users.update');
@@ -170,3 +187,8 @@ Route::middleware(['auth'])->prefix('test')->name('test.')->group(function () {
     Route::post('/document/generate', [TestDocumentController::class, 'generateTest'])->name('document.generate');
     Route::get('/document/preview', [TestDocumentController::class, 'previewData'])->name('document.preview');
 });
+
+// ============================================================
+// OJT MONITORING & EVALUATION SYSTEM ROUTES (Phase 2)
+// ============================================================
+require base_path('routes/web_ojt.php');

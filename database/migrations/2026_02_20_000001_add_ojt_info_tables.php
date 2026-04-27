@@ -29,7 +29,7 @@ return new class extends Migration
             $table->string('supervisor_contact')->nullable();
             $table->date('ojt_start')->nullable();
             $table->date('ojt_end')->nullable();
-            $table->integer('required_hours')->nullable()->default(486);
+            $table->integer('required_hours')->nullable()->default(720);
             $table->integer('rendered_hours')->nullable()->default(0);
             $table->enum('ojt_status', ['pending', 'ongoing', 'completed', 'withdrawn'])->default('pending');
             $table->timestamps();

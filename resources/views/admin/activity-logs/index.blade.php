@@ -33,10 +33,10 @@
 <div class="card mb-3">
     <div class="card-body">
         <form method="GET" action="{{ route('admin.activity-logs') }}" class="filters-form">
-            <div class="filters-grid">
-                <div class="filter-group">
-                    <label for="activity">Activity Type</label>
-                    <select name="activity" id="activity" class="form-select">
+            <div class="filters-grid" style="display: flex; flex-wrap: nowrap; gap: 10px; align-items: flex-end; overflow-x: auto; padding-bottom: 5px;">
+                <div class="filter-group" style="flex: 0 0 auto; width: 130px;">
+                    <label for="activity" style="font-size: 12px;">Activity Type</label>
+                    <select name="activity" id="activity" class="form-select" style="font-size: 13px;">
                         <option value="">All Activities</option>
                         @foreach($activityTypes as $type)
                             <option value="{{ $type }}" {{ request('activity') === $type ? 'selected' : '' }}>{{ str_replace('_', ' ', ucfirst($type)) }}</option>
@@ -44,9 +44,9 @@
                     </select>
                 </div>
 
-                <div class="filter-group">
-                    <label for="module">Module</label>
-                    <select name="module" id="module" class="form-select">
+                <div class="filter-group" style="flex: 0 0 auto; width: 110px;">
+                    <label for="module" style="font-size: 12px;">Module</label>
+                    <select name="module" id="module" class="form-select" style="font-size: 13px;">
                         <option value="">All Modules</option>
                         @foreach($modules as $module)
                             <option value="{{ $module }}" {{ request('module') === $module ? 'selected' : '' }}>{{ ucfirst($module) }}</option>
@@ -54,9 +54,9 @@
                     </select>
                 </div>
 
-                <div class="filter-group">
-                    <label for="user_id">User</label>
-                    <select name="user_id" id="user_id" class="form-select">
+                <div class="filter-group" style="flex: 0 0 auto; width: 120px;">
+                    <label for="user_id" style="font-size: 12px;">User</label>
+                    <select name="user_id" id="user_id" class="form-select" style="font-size: 13px;">
                         <option value="">All Users</option>
                         @foreach($users as $user)
                             <option value="{{ $user->id }}" {{ request('user_id') == $user->id ? 'selected' : '' }}>
@@ -66,9 +66,9 @@
                     </select>
                 </div>
 
-                <div class="filter-group">
-                    <label for="status">Status</label>
-                    <select name="status" id="status" class="form-select">
+                <div class="filter-group" style="flex: 0 0 auto; width: 100px;">
+                    <label for="status" style="font-size: 12px;">Status</label>
+                    <select name="status" id="status" class="form-select" style="font-size: 13px;">
                         <option value="">All Statuses</option>
                         <option value="success" {{ request('status') === 'success' ? 'selected' : '' }}>Success</option>
                         <option value="failed" {{ request('status') === 'failed' ? 'selected' : '' }}>Failed</option>
@@ -76,9 +76,9 @@
                     </select>
                 </div>
 
-                <div class="filter-group">
-                    <label for="days">Date Range</label>
-                    <select name="days" id="days" class="form-select">
+                <div class="filter-group" style="flex: 0 0 auto; width: 120px;">
+                    <label for="days" style="font-size: 12px;">Date Range</label>
+                    <select name="days" id="days" class="form-select" style="font-size: 13px;">
                         <option value="">Custom Range</option>
                         <option value="1" {{ request('days') === '1' ? 'selected' : '' }}>Last 24 Hours</option>
                         <option value="7" {{ request('days') === '7' ? 'selected' : '' }}>Last 7 Days</option>
@@ -87,22 +87,22 @@
                     </select>
                 </div>
 
-                <div class="filter-group">
-                    <label for="from_date">From Date</label>
-                    <input type="date" name="from_date" id="from_date" class="form-control" value="{{ request('from_date') }}">
+                <div class="filter-group" style="flex: 0 0 auto; width: 105px;">
+                    <label for="from_date" style="font-size: 12px;">From</label>
+                    <input type="date" name="from_date" id="from_date" class="form-control" style="font-size: 13px;" value="{{ request('from_date') }}">
                 </div>
 
-                <div class="filter-group">
-                    <label for="to_date">To Date</label>
-                    <input type="date" name="to_date" id="to_date" class="form-control" value="{{ request('to_date') }}">
+                <div class="filter-group" style="flex: 0 0 auto; width: 105px;">
+                    <label for="to_date" style="font-size: 12px;">To</label>
+                    <input type="date" name="to_date" id="to_date" class="form-control" style="font-size: 13px;" value="{{ request('to_date') }}">
                 </div>
 
-                <div class="filter-actions" style="display:flex; align-items:flex-end; gap:8px;">
-                    <button type="submit" class="btn btn-primary btn-sm">
-                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                <div class="filter-actions" style="display:flex; align-items:flex-end; gap:6px; flex: 0 0 auto;">
+                    <button type="submit" class="btn btn-primary btn-sm" style="padding: 6px 12px; font-size: 13px;">
+                        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
                         Filter
                     </button>
-                    <a href="{{ route('admin.activity-logs') }}" class="btn btn-ghost btn-sm">Reset</a>
+                    <a href="{{ route('admin.activity-logs') }}" class="btn btn-ghost btn-sm" style="padding: 6px 12px; font-size: 13px;">Reset</a>
                 </div>
             </div>
         </form>
@@ -110,69 +110,52 @@
 </div>
 
 {{-- Activity Logs Table --}}
-<div class="card">
+<div class="card" style="border: 1px solid #ddd; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+    <div style="background: #f5f5f5; padding: 16px; border-bottom: 1px solid #ddd;">
+        <h3 style="margin: 0; font-size: 14px; font-weight: 600; color: #333;">Activity Audit Log</h3>
+    </div>
     <div class="card-body" style="padding:0;">
         <div class="table-wrapper">
-            <table class="data-table">
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px; line-height: 1.6;">
                 <thead>
-                    <tr>
-                        <th>Timestamp</th>
-                        <th>User</th>
-                        <th>Activity</th>
-                        <th>Module</th>
-                        <th>Affected User</th>
-                        <th>Status</th>
-                        <th>IP Address</th>
-                        <th>Action</th>
+                    <tr style="background: #f9f9f9; border-bottom: 2px solid #999;">
+                        <th style="padding: 12px 14px; text-align: left; font-weight: 600; color: #333; border-right: 1px solid #ddd;">Timestamp</th>
+                        <th style="padding: 12px 14px; text-align: left; font-weight: 600; color: #333; border-right: 1px solid #ddd;">User</th>
+                        <th style="padding: 12px 14px; text-align: left; font-weight: 600; color: #333; border-right: 1px solid #ddd;">Activity</th>
+                        <th style="padding: 12px 14px; text-align: left; font-weight: 600; color: #333; border-right: 1px solid #ddd;">Affected User</th>
+                        <th style="padding: 12px 14px; text-align: left; font-weight: 600; color: #333;">Status</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($activities as $activity)
-                    <tr>
-                        <td>
-                            <span class="monospace" style="font-size:0.84rem;">{{ $activity->created_at->format('M d, Y H:i:s') }}</span>
+                    <tr style="border-bottom: 1px solid #e0e0e0;">
+                        <td style="padding: 10px 14px; border-right: 1px solid #e8e8e8; color: #555; font-family: 'Courier New', monospace; font-size: 12px;">{{ $activity->created_at->format('M d, Y H:i:s') }}</td>
+                        <td style="padding: 10px 14px; border-right: 1px solid #e8e8e8; color: #333;">
+                            <div style="font-weight: 500;">{{ $activity->user?->short_name ?? 'System' }}</div>
+                            <div style="font-size: 11px; color: #999;">{{ $activity->user?->email ?? '—' }}</div>
                         </td>
-                        <td>
-                            <div>
-                                <strong>{{ $activity->user?->short_name ?? 'System' }}</strong>
-                                <div style="font-size:0.84rem; color:var(--gray-400);">{{ $activity->user?->email ?? '—' }}</div>
-                            </div>
-                        </td>
-                        <td>
-                            <span class="badge" style="background:var(--blue-100); color:var(--blue-700);">
-                                {{ str_replace('_', ' ', ucfirst($activity->activity)) }}
-                            </span>
-                        </td>
-                        <td><span class="monospace" style="font-size:0.84rem;">{{ ucfirst($activity->module) }}</span></td>
-                        <td>
+                        <td style="padding: 10px 14px; border-right: 1px solid #e8e8e8; color: #333; text-transform: capitalize;">{{ str_replace('_', ' ', $activity->activity) }}</td>
+                        <td style="padding: 10px 14px; border-right: 1px solid #e8e8e8; color: #333;">
                             @if($activity->targetUser)
-                                <div>
-                                    <strong>{{ $activity->targetUser->short_name }}</strong>
-                                    <div style="font-size:0.84rem; color:var(--gray-400);">{{ $activity->targetUser->email }}</div>
-                                </div>
+                                <div style="font-weight: 500;">{{ $activity->targetUser->short_name }}</div>
+                                <div style="font-size: 11px; color: #999;">{{ $activity->targetUser->email }}</div>
                             @else
-                                <span class="text-muted">—</span>
+                                <span style="color: #999;">—</span>
                             @endif
                         </td>
-                        <td>
+                        <td style="padding: 10px 14px; color: #333; font-weight: 500;">
                             @if($activity->status === 'success')
-                                <span class="badge badge-approved"><span class="badge-dot"></span> Success</span>
+                                <span style="color: #228B22;">✓ Success</span>
                             @elseif($activity->status === 'failed')
-                                <span class="badge badge-rejected"><span class="badge-dot"></span> Failed</span>
+                                <span style="color: #D32F2F;">✕ Failed</span>
                             @else
-                                <span class="badge badge-pending"><span class="badge-dot"></span> Pending</span>
+                                <span style="color: #F57C00;">◐ Pending</span>
                             @endif
-                        </td>
-                        <td><span class="monospace" style="font-size:0.84rem;">{{ $activity->ip_address ?? '—' }}</span></td>
-                        <td>
-                            <a href="{{ route('admin.activity-logs.show', $activity->id) }}" class="btn btn-ghost btn-sm">
-                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7C7.523 19 3.732 16.057 2.458 12z"/></svg>
-                            </a>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="8" style="text-align:center; padding: 24px; color:var(--gray-400);">No activities found.</td>
+                        <td colspan="5" style="padding: 24px; text-align: center; color: #999;">No activities found.</td>
                     </tr>
                     @endforelse
                 </tbody>
